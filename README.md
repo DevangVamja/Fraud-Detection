@@ -43,7 +43,7 @@ To run this project locally, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/fraud-detection.git
+   git clone https://github.com/DevangVamja/Fraud-Detection
    cd fraud-detection
    ```
 2. Set up a virtual environment (optional but recommended):
