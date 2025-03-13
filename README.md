@@ -123,4 +123,4 @@ For questions or feedback, feel free to reach out:
 👤 [**Devang Vamja**](https://devangvamja-portfolio.netlify.app/)  
 📧 [devangvamja2000@gmail.com](mailto:devangvamja2000@gmail.com)  
 🔗 [LinkedIn](https://linkedin.com/in/DevangVamja)  
-[![For More Repo](https://img.shields.io/badge/GitHub-000?logo=github&logoColor=white)](https://github.com/DevangVamja)
+[For More Repo](https://github.com/DevangVamja)
