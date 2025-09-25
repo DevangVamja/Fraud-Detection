@@ -11,7 +11,10 @@ if TEST_ROOT not in sys.path:
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.inference import FraudModel
@@ -38,6 +41,10 @@ class PredictionResponse(BaseModel):
 app = FastAPI(title="Fraud Detection Service", version="1.0.0")
 model: FraudModel | None = None
 
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+
 
 @app.on_event("startup")
 def load_model() -> None:
@@ -48,6 +55,11 @@ def load_model() -> None:
             "The trained model could not be found. Run `python -m src.train <data.csv>` first."
         )
     model = FraudModel(model_path=model_path)
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/predict", response_model=PredictionResponse)
