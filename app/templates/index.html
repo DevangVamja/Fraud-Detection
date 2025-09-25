@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fraud Detection Playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <h1>Fraud Detection Playground</h1>
+          <p>
+            Experiment with different transaction profiles and instantly preview
+            the request payload, generated <code>curl</code> command, and model
+            predictions from the FastAPI service.
+          </p>
+        </div>
+        <button id="toggle-theme" class="button ghost" type="button">
+          Toggle Theme
+        </button>
+      </header>
+
+      <main class="content-grid">
+        <section class="card" aria-labelledby="transaction-builder">
+          <div class="card-header">
+            <div>
+              <h2 id="transaction-builder">Transaction Builder</h2>
+              <p>Create a payload with granular control over each feature.</p>
+            </div>
+            <div class="sample-select">
+              <label for="sample-presets">Load preset</label>
+              <select id="sample-presets">
+                <option value="custom" selected>Custom values</option>
+                <option value="legit">Legitimate transfer</option>
+                <option value="fraud">Likely fraud</option>
+                <option value="small">Small payment</option>
+              </select>
+            </div>
+          </div>
+
+          <form id="transaction-form" novalidate>
+            <div class="form-grid">
+              <label class="field">
+                <span>Step</span>
+                <input type="number" name="step" min="0" step="1" required />
+              </label>
+              <label class="field">
+                <span>Type</span>
+                <select name="type" required>
+                  <option value="TRANSFER">TRANSFER</option>
+                  <option value="CASH_OUT">CASH_OUT</option>
+                  <option value="CASH_IN">CASH_IN</option>
+                  <option value="DEBIT">DEBIT</option>
+                  <option value="PAYMENT">PAYMENT</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Amount</span>
+                <input type="number" name="amount" min="0" step="0.01" required />
+              </label>
+              <label class="field">
+                <span>Old Balance (Origin)</span>
+                <input
+                  type="number"
+                  name="oldbalanceOrg"
+                  step="0.01"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>New Balance (Origin)</span>
+                <input
+                  type="number"
+                  name="newbalanceOrig"
+                  step="0.01"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Old Balance (Destination)</span>
+                <input
+                  type="number"
+                  name="oldbalanceDest"
+                  step="0.01"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>New Balance (Destination)</span>
+                <input
+                  type="number"
+                  name="newbalanceDest"
+                  step="0.01"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Name (Origin)</span>
+                <input type="text" name="nameOrig" placeholder="Optional" />
+              </label>
+              <label class="field">
+                <span>Name (Destination)</span>
+                <input type="text" name="nameDest" placeholder="Optional" />
+              </label>
+              <label class="field toggle">
+                <span>Flagged as Fraud</span>
+                <input type="checkbox" name="isFlaggedFraud" />
+                <span class="toggle-slider" aria-hidden="true"></span>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button class="button primary" type="submit">
+                Send to FastAPI
+              </button>
+              <button class="button ghost" type="reset">Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="payload-preview">
+          <div class="card-header">
+            <div>
+              <h2 id="payload-preview">Payload &amp; Curl Preview</h2>
+              <p>Everything updates live as you tweak the form.</p>
+            </div>
+            <button id="copy-curl" class="button ghost" type="button">
+              Copy curl
+            </button>
+          </div>
+          <div class="preview-grid">
+            <article>
+              <header>JSON Payload</header>
+              <pre id="json-preview" aria-live="polite"></pre>
+            </article>
+            <article>
+              <header>curl Command</header>
+              <pre id="curl-preview" aria-live="polite"></pre>
+            </article>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="response-inspector">
+          <div class="card-header">
+            <div>
+              <h2 id="response-inspector">Response Inspector</h2>
+              <p>Monitor request status, latency, and prediction history.</p>
+            </div>
+            <div class="latency">
+              <span>Latency</span>
+              <strong id="latency-value">–</strong>
+            </div>
+          </div>
+          <div class="response-summary" id="response-summary">
+            <p>No requests sent yet. Configure the payload and press submit.</p>
+          </div>
+          <div class="history">
+            <header>
+              <h3>History</h3>
+              <button id="clear-history" class="button ghost" type="button">
+                Clear
+              </button>
+            </header>
+            <ul id="history-list" aria-live="polite"></ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="history-item-template">
+      <li>
+        <div class="pill" data-result></div>
+        <div class="payload"></div>
+        <time data-time></time>
+        <span class="probability"></span>
+      </li>
+    </template>
+
+    <script src="/static/app.js" type="module"></script>
+  </body>
+</html>
