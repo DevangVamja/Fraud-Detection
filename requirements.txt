@@ -1,28 +1,28 @@
 # Core Libraries
-numpy==1.23.5
-pandas==1.5.3
-scikit-learn==1.2.0
-matplotlib==3.6.2
-seaborn==0.12.1
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
 
 # Machine Learning Libraries
-tensorflow==2.11.0
-keras==2.11.0
-xgboost==1.7.4
-imbalanced-learn==0.10.1
+tensorflow
+keras
+xgboost
+imbalanced-learn
 
 # Hyperparameter Tuning and Optimization
-optuna==3.1.0
-keras-tuner==1.3.0
+optuna
+keras-tuner
 
 # API and Serving
-fastapi==0.95.1
-uvicorn==0.21.1
-pydantic==1.10.7
+fastapi
+uvicorn
+pydantic
 
 # Jupyter Notebook
-jupyter==1.0.0
+jupyter
 
 # Additional Utilities
-scipy==1.9.3
-joblib==1.2.0
+scipy
+joblib

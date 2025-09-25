@@ -28,8 +28,14 @@ def build_model_pipeline(
 ) -> Pipeline:
     """Create the preprocessing + classifier pipeline used during training."""
 
-    numeric_features = tuple(numeric_features or NUMERIC_FEATURES)
-    categorical_features = tuple(categorical_features or CATEGORICAL_FEATURES)
+    if numeric_features is None:
+        numeric_features = NUMERIC_FEATURES
+    else:
+        numeric_features = tuple(numeric_features)
+    if categorical_features is None:
+        categorical_features = CATEGORICAL_FEATURES
+    else:
+        categorical_features = tuple(categorical_features)
 
     transformers = []
     if numeric_features:
