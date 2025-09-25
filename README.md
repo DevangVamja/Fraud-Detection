@@ -44,29 +44,81 @@ To run this project locally, follow these steps:
 1. Clone the repository:
    ```bash
    git clone https://github.com/DevangVamja/Fraud-Detection
-   cd fraud-detection
+   cd Fraud-Detection
    ```
 2. Set up a virtual environment (optional but recommended):
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
    ```
 3. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Open the Jupyter Notebook:
-   ```bash
-   jupyter notebook
-   ```
 
-## Usage
-1. Open the Jupyter notebook (`fraud_detection.ipynb`) in your browser.
-2. Run the cells sequentially to:
-   - Load and preprocess the data.
-   - Perform exploratory data analysis (EDA).
-   - Train and evaluate machine learning models.
-3. Adjust the code as needed for your specific use case.
+## Training Pipeline
+
+Run the end-to-end training routine directly from the command line.  Provide
+the path to the PaySim dataset CSV file and the pipeline will create a
+train/test split, fit the model and export a serialised artefact together with
+evaluation metrics.
+
+```bash
+python -m src.train data/PS_20174392719_1491204439457_log.csv \
+  --model-output models/fraud_model.joblib \
+  --metrics-output models/metrics.json
+```
+
+Customise the split ratio, random seed or columns to drop using the optional
+flags exposed by `python -m src.train --help`.
+
+## Running Tests
+
+Unit tests exercise the data-processing pipeline on a synthetic dataset:
+
+```bash
+pytest
+```
+
+## Serving Predictions Locally
+
+Once the training step has produced `models/fraud_model.joblib` you can serve
+predictions through the included FastAPI application.
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Send requests to the `/predict` endpoint with the required transaction fields:
+
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "step": 1,
+        "type": "TRANSFER",
+        "amount": 1500.0,
+        "oldbalanceOrg": 2000.0,
+        "newbalanceOrig": 500.0,
+        "oldbalanceDest": 0.0,
+        "newbalanceDest": 1500.0,
+        "isFlaggedFraud": 0
+      }'
+```
+
+The API also exposes `/health` for readiness checks.
+
+## Container Deployment
+
+A `Dockerfile` is provided for containerised deployments.  Build the image and
+run the container after copying the trained model into the `models/` directory:
+
+```bash
+docker build -t fraud-detection-service .
+docker run -it --rm -p 8000:8000   -v $(pwd)/models:/app/models fraud-detection-service
+```
+
+The service will be available at `http://localhost:8000`.
 
 ## Methodology
 ### Data Preprocessing
