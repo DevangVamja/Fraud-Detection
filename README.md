@@ -1,67 +1,57 @@
-# Fraud Detection using Neural Network
+# Fraud Detection Using Scikit-Learn
 
 ## Overview
-This project focuses on detecting fraudulent transactions using machine learning techniques. The goal is to build a model that can accurately classify transactions as either fraudulent or non-fraudulent based on historical data. The project includes data preprocessing, exploratory data analysis (EDA), model training, and evaluation.
+This project provides an end-to-end workflow for detecting fraudulent financial transactions. It covers feature preparation, model training with a scikit-learn pipeline, automated tests, and a FastAPI inference service for real-time scoring.
 
 ## Table of Contents
-- [Project Description](#project-description)
+- [Features](#features)
 - [Dataset](#dataset)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Methodology](#methodology)
-- [Results](#results)
+- [Training Pipeline](#training-pipeline)
+- [Running Tests](#running-tests)
+- [Serving Predictions](#serving-predictions)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [License](#license)
-- [Acknowledgments](#acknowledgments)
 - [Contact](#contact)
 
-## Project Description
-Fraud detection is a critical task in financial systems to prevent unauthorized transactions and minimize losses. This project uses a dataset of transaction records to build a machine learning model that can identify fraudulent transactions with high accuracy. The model is trained and evaluated using various techniques, including Random Forest, Neural Networks, and hyperparameter tuning.
+## Features
+- Reproducible feature engineering and model pipeline built around `ColumnTransformer` and `LogisticRegression`.
+- CLI training script (`src/train.py`) that exports the trained pipeline and evaluation metrics.
+- Unit tests for the data-preparation and modelling utilities.
+- FastAPI application (`app/main.py`) for serving predictions and a simple web UI.
+- Dockerfile for containerised deployments.
 
 ## Dataset
+The repository no longer ships with raw data. Download the PaySim dataset from Kaggle:
 
-The data used in this experiment can be found at **https://www.kaggle.com/datasets/ealaxi/paysim1**
+- https://www.kaggle.com/datasets/ealaxi/paysim1
 
-The dataset used in this project contains transaction records with the following features:
+Place the CSV (for example `PS_20174392719_1491204439457_log.csv`) inside the `data/` directory before running the training script.
 
-- **step**: Represents a unit of time (e.g., hour, day).
-- **type**: Type of transaction (e.g., CASH-IN, CASH-OUT, DEBIT, PAYMENT, TRANSFER).
-- **amount**: The amount of money involved in the transaction.
-- **nameOrig**: The name or ID of the customer who initiated the transaction.
-- **oldbalanceOrg**: The balance of the origin account before the transaction.
-- **newbalanceOrig**: The balance of the origin account after the transaction.
-- **nameDest**: The name or ID of the recipient of the transaction.
-- **oldbalanceDest**: The balance of the destination account before the transaction.
-- **newbalanceDest**: The balance of the destination account after the transaction.
-- **isFraud**: A binary indicator (0 or 1) representing whether the transaction is fraudulent.
-- **isFlaggedFraud**: A binary indicator (0 or 1) representing whether the transaction was flagged as fraud by the system.
+Key columns used during training:
+- `step`, `type`, `amount`
+- Balances before/after the transaction (`oldbalanceOrg`, `newbalanceOrig`, `oldbalanceDest`, `newbalanceDest`)
+- `isFlaggedFraud` (system flag)
+- `isFraud` (target label)
 
-The dataset is highly imbalanced, with a small percentage of transactions being fraudulent.
+Transaction IDs (`nameOrig`, `nameDest`) are dropped by default.
 
 ## Installation
-To run this project locally, follow these steps:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/DevangVamja/Fraud-Detection
-   cd Fraud-Detection
-   ```
-2. Set up a virtual environment (optional but recommended):
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
-   ```
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/DevangVamja/Fraud-Detection.git
+cd Fraud-Detection
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Training Pipeline
-
-Run the end-to-end training routine directly from the command line.  Provide
-the path to the PaySim dataset CSV file and the pipeline will create a
-train/test split, fit the model and export a serialised artefact together with
-evaluation metrics.
+Run the training entrypoint with the dataset path. The script splits the data, fits the preprocessing + logistic regression pipeline, and saves artefacts under `models/`.
 
 ```bash
 python -m src.train data/PS_20174392719_1491204439457_log.csv \
@@ -69,28 +59,28 @@ python -m src.train data/PS_20174392719_1491204439457_log.csv \
   --metrics-output models/metrics.json
 ```
 
-Customise the split ratio, random seed or columns to drop using the optional
-flags exposed by `python -m src.train --help`.
+Optional flags:
+- `--test-size`: hold-out fraction (default `0.2`).
+- `--random-state`: seed for reproducibility (default `42`).
+- `--drop-columns`: override the columns removed before training (defaults to `nameOrig nameDest`).
+
+After execution you will find the fitted pipeline (`fraud_model.joblib`) and evaluation metrics (`metrics.json`).
 
 ## Running Tests
-
-Unit tests exercise the data-processing pipeline on a synthetic dataset:
+Unit tests validate the feature preparation and modelling helpers on synthetic data:
 
 ```bash
 pytest
 ```
 
-## Serving Predictions Locally
-
-Once the training step has produced `models/fraud_model.joblib` you can serve
-predictions through the included FastAPI application.
+## Serving Predictions
+Use the FastAPI service once a trained model exists at `models/fraud_model.joblib`:
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Send requests to the `/predict` endpoint with the required transaction fields:
-
+### Example Request
 ```bash
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
@@ -106,73 +96,34 @@ curl -X POST "http://localhost:8000/predict" \
       }'
 ```
 
-The API also exposes `/health` for readiness checks.
+Health checks are available at `GET /health`.
 
-## Container Deployment
+## Configuration
+Runtime configuration is defined in `src/config.py` (data locations, default drop columns, and model settings). Adjust these defaults or pass CLI flags when needed.
 
-A `Dockerfile` is provided for containerised deployments.  Build the image and
-run the container after copying the trained model into the `models/` directory:
-
-```bash
-docker build -t fraud-detection-service .
-docker run -it --rm -p 8000:8000   -v $(pwd)/models:/app/models fraud-detection-service
+## Project Structure
+```
+.
+|-- app/                # FastAPI service and templates
+|-- models/             # Saved pipelines and metrics (generated)
+|-- src/                # Training, inference, and pipeline utilities
+|-- tests/              # Unit tests
+|-- Notebooks/          # Exploratory notebooks
+|-- Dockerfile
+|-- requirements.txt
+`-- README.md
 ```
 
-The service will be available at `http://localhost:8000`.
-
-## Methodology
-### Data Preprocessing
-- Handle missing values and encode categorical variables.
-- Scale numerical features using `StandardScaler`.
-- Balance the dataset using techniques like SMOTE or undersampling.
-- For this particular use case, we used undersampling because two reasons.
-    1. The minority class had about 8000 rows which is big enough presence.
-    2. using SMOTE will generate too much of synthetic data.
-
-### Model Training
-- Train a **Neural Network**.
-- Use **Grid Search** and **Random Search** for hyperparameter tuning (I used **Manual Search** because it cost less computing resources).
-- Adjust the decision threshold to optimize for precision or recall.
-
-### Evaluation
-- Evaluate the models using metrics like **precision, recall, F1-score, and ROC-AUC**.
-- Analyze the **confusion matrix** to understand the trade-off between False Positives (FP) and False Negatives (FN).
-
-## Results
-The final model achieves the following performance metrics:
-
-- **Accuracy**: 98%
-- **Precision**: 97% (for fraudulent transactions)
-- **Recall**: 99% (for fraudulent transactions)
-- **F1-Score**: 98% (for fraudulent transactions)
-- **ROC-AUC Score**: 0.997
-
-The confusion matrix shows:
-
-- **True Positives (TP)**: 2444
-- **False Positives (FP)**: 88
-- **True Negatives (TN)**: 2379
-- **False Negatives (FN)**: 17
-
 ## Contributing
-Contributions are welcome! If you'd like to contribute to this project, please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Commit your changes and push them to your fork.
-4. Submit a pull request with a detailed description of your changes.
+1. Fork the repository and create a new branch for your feature or bug fix.
+2. Run the tests (`pytest`) before opening a pull request.
+3. Describe the changes clearly in the PR body.
 
 ## License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-## Acknowledgments
-- Thanks to the dataset provider for making the data publicly available.
-- Special thanks to the open-source community for providing tools and libraries that made this project possible.
+This project is licensed under the MIT License. See `LICENSE` for details.
 
 ## Contact
-For questions or feedback, feel free to reach out:
-
-👤 [**Devang Vamja**](https://devangvamja-portfolio.netlify.app/)  
-📧 [devangvamja2000@gmail.com](mailto:devangvamja2000@gmail.com)  
-🔗 [LinkedIn](https://linkedin.com/in/DevangVamja)  
-[For More Repo](https://github.com/DevangVamja)
+- **Devang Vamja** - https://devangvamja-portfolio.netlify.app/
+- Email - devangvamja2000@gmail.com
+- LinkedIn - https://linkedin.com/in/DevangVamja
+- GitHub - https://github.com/DevangVamja
